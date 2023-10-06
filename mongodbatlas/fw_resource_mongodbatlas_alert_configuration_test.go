@@ -397,6 +397,41 @@ func TestAccConfigRSAlertConfiguration_importPagerDuty(t *testing.T) {
 	})
 }
 
+func TestAccConfigRSAlertConfiguration_UpdatePagerDutyWithNotifierId(t *testing.T) {
+	var (
+		resourceName = "mongodbatlas_alert_configuration.test"
+		projectID    = os.Getenv("MONGODB_ATLAS_PROJECT_ID")
+		serviceKey   = "dummykey111111111111111111111111"
+		notifierId   = "651dd9336afac13e1c112222"
+		alert        = &matlas.AlertConfiguration{}
+	)
+
+	resource.ParallelTest(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheckBasic(t) },
+		ProtoV6ProviderFactories: testAccProviderV6Factories,
+		CheckDestroy:             testAccCheckMongoDBAtlasAlertConfigurationDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccMongoDBAtlasAlertConfigurationPagerDutyNotifierIdConfig(projectID, notifierId, 10, &serviceKey),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckMongoDBAtlasAlertConfigurationExists(resourceName, alert),
+					resource.TestCheckResourceAttrSet(resourceName, "project_id"),
+					resource.TestCheckResourceAttr(resourceName, "notification.0.delay_min", "10"),
+					resource.TestCheckResourceAttr(resourceName, "notification.0.service_key", serviceKey),
+				),
+			},
+			{
+				Config: testAccMongoDBAtlasAlertConfigurationPagerDutyNotifierIdConfig(projectID, notifierId, 15, nil),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckMongoDBAtlasAlertConfigurationExists(resourceName, alert),
+					resource.TestCheckResourceAttrSet(resourceName, "project_id"),
+					resource.TestCheckResourceAttr(resourceName, "notification.0.delay_min", "15"),
+				),
+			},
+		},
+	})
+}
+
 func TestAccConfigRSAlertConfiguration_DataDog(t *testing.T) {
 	SkipTestExtCred(t) // Will skip because requires external credentials aka api key
 	SkipTest(t)        // Will force skip if enabled
@@ -837,6 +872,27 @@ resource "mongodbatlas_alert_configuration" "test" {
   }
 }
 	`, projectID, serviceKey, enabled)
+}
+
+func testAccMongoDBAtlasAlertConfigurationPagerDutyNotifierIdConfig(projectID, notifierId string, delayMin int, serviceKey *string) string {
+	var serviceKeyString string
+	if serviceKey != nil {
+		serviceKeyString = fmt.Sprintf(`service_key = "%s"`, *serviceKey)
+	}
+	return fmt.Sprintf(`
+resource "mongodbatlas_alert_configuration" "test" {
+  project_id = %[1]q
+  event_type = "NO_PRIMARY"
+  enabled    = "true"
+
+  notification {
+    type_name    = "PAGER_DUTY"
+    notifier_id  = %[2]q
+	%[3]s
+    delay_min    = %[4]d
+  }
+}
+	`, projectID, notifierId, serviceKeyString, delayMin)
 }
 
 func testAccMongoDBAtlasAlertConfigurationOpsGenieConfig(projectID, apiKey string, enabled bool) string {

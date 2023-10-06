@@ -366,11 +366,10 @@ func TestAccConfigRSAlertConfiguration_importConfigNotifications(t *testing.T) {
 
 // used for testing notification that does not define interval_min attribute
 func TestAccConfigRSAlertConfiguration_importPagerDuty(t *testing.T) {
-	SkipTestExtCred(t) // Will skip because requires external credentials aka api key
 	var (
 		resourceName = "mongodbatlas_alert_configuration.test"
 		projectID    = os.Getenv("MONGODB_ATLAS_PROJECT_ID")
-		serviceKey   = os.Getenv("PAGER_DUTY_SERVICE_KEY")
+		serviceKey   = "dummykey111111111111111111111111"
 		alert        = &matlas.AlertConfiguration{}
 	)
 
@@ -402,7 +401,7 @@ func TestAccConfigRSAlertConfiguration_UpdatePagerDutyWithNotifierId(t *testing.
 		resourceName = "mongodbatlas_alert_configuration.test"
 		projectID    = os.Getenv("MONGODB_ATLAS_PROJECT_ID")
 		serviceKey   = "dummykey111111111111111111111111"
-		notifierId   = "651dd9336afac13e1c112222"
+		notifierID   = "111111111111111111111111"
 		alert        = &matlas.AlertConfiguration{}
 	)
 
@@ -412,7 +411,7 @@ func TestAccConfigRSAlertConfiguration_UpdatePagerDutyWithNotifierId(t *testing.
 		CheckDestroy:             testAccCheckMongoDBAtlasAlertConfigurationDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccMongoDBAtlasAlertConfigurationPagerDutyNotifierIdConfig(projectID, notifierId, 10, &serviceKey),
+				Config: testAccMongoDBAtlasAlertConfigurationPagerDutyNotifierIDConfig(projectID, notifierID, 10, &serviceKey),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckMongoDBAtlasAlertConfigurationExists(resourceName, alert),
 					resource.TestCheckResourceAttrSet(resourceName, "project_id"),
@@ -421,7 +420,7 @@ func TestAccConfigRSAlertConfiguration_UpdatePagerDutyWithNotifierId(t *testing.
 				),
 			},
 			{
-				Config: testAccMongoDBAtlasAlertConfigurationPagerDutyNotifierIdConfig(projectID, notifierId, 15, nil),
+				Config: testAccMongoDBAtlasAlertConfigurationPagerDutyNotifierIDConfig(projectID, notifierID, 15, nil),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckMongoDBAtlasAlertConfigurationExists(resourceName, alert),
 					resource.TestCheckResourceAttrSet(resourceName, "project_id"),
@@ -433,12 +432,10 @@ func TestAccConfigRSAlertConfiguration_UpdatePagerDutyWithNotifierId(t *testing.
 }
 
 func TestAccConfigRSAlertConfiguration_DataDog(t *testing.T) {
-	SkipTestExtCred(t) // Will skip because requires external credentials aka api key
-	SkipTest(t)        // Will force skip if enabled
 	var (
 		resourceName = "mongodbatlas_alert_configuration.test"
 		projectID    = os.Getenv("MONGODB_ATLAS_PROJECT_ID")
-		ddAPIKey     = os.Getenv("DD_API_KEY")
+		ddAPIKey     = "11111111111111111111111111111111"
 		ddRegion     = "US"
 		alert        = &matlas.AlertConfiguration{}
 	)
@@ -460,11 +457,10 @@ func TestAccConfigRSAlertConfiguration_DataDog(t *testing.T) {
 }
 
 func TestAccConfigRSAlertConfiguration_PagerDuty(t *testing.T) {
-	SkipTestExtCred(t) // Will skip because requires external credentials aka api key
 	var (
 		resourceName = "mongodbatlas_alert_configuration.test"
 		projectID    = os.Getenv("MONGODB_ATLAS_PROJECT_ID")
-		serviceKey   = os.Getenv("PAGER_DUTY_SERVICE_KEY")
+		serviceKey   = "dummykey111111111111111111111111"
 		alert        = &matlas.AlertConfiguration{}
 	)
 
@@ -485,11 +481,10 @@ func TestAccConfigRSAlertConfiguration_PagerDuty(t *testing.T) {
 }
 
 func TestAccConfigRSAlertConfiguration_OpsGenie(t *testing.T) {
-	SkipTestExtCred(t) // Will skip because requires external credentials aka api key
 	var (
 		resourceName = "mongodbatlas_alert_configuration.test"
 		projectID    = os.Getenv("MONGODB_ATLAS_PROJECT_ID")
-		apiKey       = os.Getenv("OPS_GENIE_API_KEY")
+		apiKey       = "11111111-1111-1111-1111-111111111111"
 		alert        = &matlas.AlertConfiguration{}
 	)
 
@@ -510,11 +505,10 @@ func TestAccConfigRSAlertConfiguration_OpsGenie(t *testing.T) {
 }
 
 func TestAccConfigRSAlertConfiguration_VictorOps(t *testing.T) {
-	SkipTestExtCred(t) // Will skip because requires external credentials aka api key
 	var (
 		resourceName = "mongodbatlas_alert_configuration.test"
 		projectID    = os.Getenv("MONGODB_ATLAS_PROJECT_ID")
-		apiKey       = os.Getenv("VICTOR_OPS_API_KEY")
+		apiKey       = "11111111-1111-1111-1111-111111111111"
 		alert        = &matlas.AlertConfiguration{}
 	)
 
@@ -874,10 +868,10 @@ resource "mongodbatlas_alert_configuration" "test" {
 	`, projectID, serviceKey, enabled)
 }
 
-func testAccMongoDBAtlasAlertConfigurationPagerDutyNotifierIdConfig(projectID, notifierId string, delayMin int, serviceKey *string) string {
+func testAccMongoDBAtlasAlertConfigurationPagerDutyNotifierIDConfig(projectID, notifierID string, delayMin int, serviceKey *string) string {
 	var serviceKeyString string
 	if serviceKey != nil {
-		serviceKeyString = fmt.Sprintf(`service_key = "%s"`, *serviceKey)
+		serviceKeyString = fmt.Sprintf(`service_key = %q`, *serviceKey)
 	}
 	return fmt.Sprintf(`
 resource "mongodbatlas_alert_configuration" "test" {
@@ -892,7 +886,7 @@ resource "mongodbatlas_alert_configuration" "test" {
     delay_min    = %[4]d
   }
 }
-	`, projectID, notifierId, serviceKeyString, delayMin)
+	`, projectID, notifierID, serviceKeyString, delayMin)
 }
 
 func testAccMongoDBAtlasAlertConfigurationOpsGenieConfig(projectID, apiKey string, enabled bool) string {

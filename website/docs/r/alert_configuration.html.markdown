@@ -264,6 +264,6 @@ Alert Configuration can be imported using the `project_id-alert_configuration_id
 $ terraform import mongodbatlas_alert_configuration.test 5d0f1f74cf09a29120e123cd-5d0f1f74cf09a29120e1fscg
 ```
 
-**NOTE**: Third-party notifications will not contain their respective credentials as these are sensitive attributes. If you wish to perform updates on these notifications, make sure to provide the corresponding `notifier_id` attribute so that credentials can be obtained successfully.
+**NOTE**: Third-party notifications will not contain their respective credentials as these are sensitive attributes. If you wish to perform updates on these notifications without providing the original credentials provide the corresponding `notifier_id` attribute instead.
 
 For more information see: [MongoDB Atlas API Reference.](https://docs.atlas.mongodb.com/reference/api/alert-configurations/)

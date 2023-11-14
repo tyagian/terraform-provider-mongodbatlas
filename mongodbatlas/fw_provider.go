@@ -413,6 +413,8 @@ func (p *MongodbtlasProvider) DataSources(context.Context) []func() datasource.D
 		NewProjectIPAccessListDS,
 		NewAtlasUserDS,
 		NewAtlasUsersDS,
+		NewClusterDS,
+		NewClustersDS,
 	}
 }
 

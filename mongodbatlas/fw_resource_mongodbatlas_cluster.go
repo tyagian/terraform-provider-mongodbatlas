@@ -1210,7 +1210,7 @@ func hasLabelsChanged(planLabels, stateLables []tfLabelModel) bool {
 	return !reflect.DeepEqual(planLabels, stateLables)
 }
 
-func hasTagsChanged(planTags, stateTags []tfTagModel) bool {
+func hasTagsChanged(planTags, stateTags []*tfTagModel) bool {
 	sort.Slice(planTags, func(i, j int) bool {
 		return planTags[i].Key.ValueString() < planTags[j].Key.ValueString()
 	})
@@ -1252,7 +1252,7 @@ func updateReplicationSpecs(clusterReq *matlas.Cluster, plan, state *tfClusterRS
 			var oldSpecs *tfReplicationSpecModel
 			original := state.ReplicationSpecs
 			for _, oldSpecsPtr := range original { // iterate over state.replication_specs
-				oldSpecs = &oldSpecsPtr
+				oldSpecs = oldSpecsPtr
 				if newSpec.ZoneName.ValueString() == oldSpecs.ZoneName.ValueString() { // find plan.replication_specs with matching zone_name
 					id = oldSpecs.ID.ValueString() // and get it's id
 					break
@@ -1459,7 +1459,7 @@ func newTFClusterModel(ctx context.Context, conn *matlas.Client, isImport bool, 
 		StateName:                    types.StringValue(apiResp.StateName),
 		TerminationProtectionEnabled: types.BoolPointerValue(apiResp.TerminationProtectionEnabled),
 		ReplicationFactor:            types.Int64PointerValue(apiResp.ReplicationFactor),
-		ConnectionStrings:            newTFConnectionStringsModel(ctx, apiResp.ConnectionStrings),
+		ConnectionStrings:            newTFConnectionStringsModelList(ctx, apiResp.ConnectionStrings),
 		BiConnectorConfig:            newTFBiConnectorConfigModel(apiResp.BiConnector),
 		ReplicationSpecs:             newTFReplicationSpecsModel(apiResp.ReplicationSpecs),
 		Labels:                       removeDefaultLabel(newTFLabelsModel(apiResp.Labels)),
@@ -1514,7 +1514,7 @@ func newTFClusterModel(ctx context.Context, conn *matlas.Client, isImport bool, 
 		return nil, err
 	}
 
-	clusterModel.SnapshotBackupPolicy, err = newTFSnapshotBackupPolicyModel(ctx, currState, conn, projectID, clusterName)
+	clusterModel.SnapshotBackupPolicy, err = newTFSnapshotBackupPolicyRSModel(ctx, conn, projectID, clusterName)
 	if err != nil {
 		return nil, err
 	}
@@ -1550,20 +1550,26 @@ func setTFProviderSettings(clusterModel *tfClusterRSModel, settings *matlas.Prov
 
 func newTFAdvancedConfigurationModelFromAtlas(ctx context.Context, conn *matlas.Client, projectID, clusterName string) (types.List, error) {
 	processArgs, _, err := conn.Clusters.GetProcessArgs(ctx, projectID, clusterName)
+	if err != nil {
+		return types.ListNull(tfAdvancedConfigurationType), err
+	}
 
-	return newTfAdvancedConfigurationModel(ctx, processArgs), err
+	advConfigModel := newTfAdvancedConfigurationModel(ctx, processArgs)
+	l, _ := types.ListValueFrom(ctx, tfAdvancedConfigurationType, advConfigModel)
+
+	return l, err
 }
 
-func newTfAdvancedConfigurationModel(ctx context.Context, p *matlas.ProcessArgs) types.List {
-	res := []tfAdvancedConfigurationModel{
+func newTfAdvancedConfigurationModel(ctx context.Context, p *matlas.ProcessArgs) []*tfAdvancedConfigurationModel {
+	res := []*tfAdvancedConfigurationModel{
 		{
-			DefaultReadConcern:        conversion.StringNullIfEmpty(p.DefaultReadConcern),
-			DefaultWriteConcern:       conversion.StringNullIfEmpty(p.DefaultWriteConcern),
-			FailIndexKeyTooLong:       types.BoolPointerValue(p.FailIndexKeyTooLong),
-			JavascriptEnabled:         types.BoolPointerValue(p.JavascriptEnabled),
-			MinimumEnabledTLSProtocol: conversion.StringNullIfEmpty(p.MinimumEnabledTLSProtocol),
-			NoTableScan:               types.BoolPointerValue(p.NoTableScan),
-			// OplogSizeMB:                      types.Int64PointerValue(p.OplogSizeMB),
+			DefaultReadConcern:               conversion.StringNullIfEmpty(p.DefaultReadConcern),
+			DefaultWriteConcern:              conversion.StringNullIfEmpty(p.DefaultWriteConcern),
+			FailIndexKeyTooLong:              types.BoolPointerValue(p.FailIndexKeyTooLong),
+			JavascriptEnabled:                types.BoolPointerValue(p.JavascriptEnabled),
+			MinimumEnabledTLSProtocol:        conversion.StringNullIfEmpty(p.MinimumEnabledTLSProtocol),
+			NoTableScan:                      types.BoolPointerValue(p.NoTableScan),
+			OplogSizeMB:                      types.Int64PointerValue(p.OplogSizeMB),
 			OplogMinRetentionHours:           types.Int64Value(cast.ToInt64(p.OplogMinRetentionHours)),
 			SampleSizeBiConnector:            types.Int64PointerValue(p.SampleSizeBIConnector),
 			SampleRefreshIntervalBiConnector: types.Int64PointerValue(p.SampleRefreshIntervalBIConnector),
@@ -1573,9 +1579,7 @@ func newTfAdvancedConfigurationModel(ctx context.Context, p *matlas.ProcessArgs)
 	if p.OplogMinRetentionHours != nil {
 		res[0].OplogMinRetentionHours = types.Int64PointerValue(p.OplogSizeMB)
 	}
-
-	s, _ := types.ListValueFrom(ctx, tfAdvancedConfigurationType, res)
-	return s
+	return res
 }
 
 func removeDefaultLabel(labels []tfLabelModel) []tfLabelModel {
@@ -1591,11 +1595,11 @@ func removeDefaultLabel(labels []tfLabelModel) []tfLabelModel {
 	return result
 }
 
-func newTFTagsModel(tags *[]*matlas.Tag) []tfTagModel {
-	res := make([]tfTagModel, len(*tags))
+func newTFTagsModel(tags *[]*matlas.Tag) []*tfTagModel {
+	res := make([]*tfTagModel, len(*tags))
 
 	for i, v := range *tags {
-		res[i] = tfTagModel{
+		res[i] = &tfTagModel{
 			Key:   types.StringValue(v.Key),
 			Value: types.StringValue(v.Value),
 		}
@@ -1604,11 +1608,11 @@ func newTFTagsModel(tags *[]*matlas.Tag) []tfTagModel {
 	return res
 }
 
-func newTFReplicationSpecsModel(replicationSpecs []matlas.ReplicationSpec) []tfReplicationSpecModel {
-	res := make([]tfReplicationSpecModel, len(replicationSpecs))
+func newTFReplicationSpecsModel(replicationSpecs []matlas.ReplicationSpec) []*tfReplicationSpecModel {
+	res := make([]*tfReplicationSpecModel, len(replicationSpecs))
 
 	for i, rSpec := range replicationSpecs {
-		res[i] = tfReplicationSpecModel{
+		res[i] = &tfReplicationSpecModel{
 			ID:            conversion.StringNullIfEmpty(rSpec.ID),
 			NumShards:     types.Int64PointerValue(rSpec.NumShards),
 			ZoneName:      conversion.StringNullIfEmpty(rSpec.ZoneName),
@@ -1634,12 +1638,12 @@ func newTFRegionsConfigModel(regionsConfig map[string]matlas.RegionsConfig) []tf
 	return res
 }
 
-func newTFBiConnectorConfigModel(biConnector *matlas.BiConnector) []tfBiConnectorConfigModel {
+func newTFBiConnectorConfigModel(biConnector *matlas.BiConnector) []*tfBiConnectorConfigModel {
 	if biConnector == nil {
-		return []tfBiConnectorConfigModel{}
+		return []*tfBiConnectorConfigModel{}
 	}
 
-	return []tfBiConnectorConfigModel{
+	return []*tfBiConnectorConfigModel{
 		{
 			Enabled:        types.BoolPointerValue(biConnector.Enabled),
 			ReadPreference: conversion.StringNullIfEmpty(biConnector.ReadPreference),
@@ -1647,9 +1651,18 @@ func newTFBiConnectorConfigModel(biConnector *matlas.BiConnector) []tfBiConnecto
 	}
 }
 
-func newTFSnapshotBackupPolicyModel(ctx context.Context, currState *tfClusterRSModel, conn *matlas.Client, projectID, clusterName string) (types.List, error) {
-	res := []tfSnapshotBackupPolicyModel{}
+func newTFSnapshotBackupPolicyRSModel(ctx context.Context, conn *matlas.Client, projectID, clusterName string) (types.List, error) {
+	res, err := newTFSnapshotBackupPolicyModel(ctx, conn, projectID, clusterName)
+	if err != nil {
+		return types.ListNull(tfSnapshotBackupPolicyType), fmt.Errorf(errorSnapshotBackupPolicyRead, clusterName, err)
+	}
+
 	s, _ := types.ListValueFrom(ctx, tfSnapshotBackupPolicyType, res)
+	return s, nil
+}
+
+func newTFSnapshotBackupPolicyModel(ctx context.Context, conn *matlas.Client, projectID, clusterName string) ([]*tfSnapshotBackupPolicyModel, error) {
+	res := []*tfSnapshotBackupPolicyModel{}
 
 	backupPolicy, response, err := conn.CloudProviderSnapshotBackupPolicies.Get(ctx, projectID, clusterName)
 
@@ -1658,13 +1671,13 @@ func newTFSnapshotBackupPolicyModel(ctx context.Context, currState *tfClusterRSM
 			strings.Contains(err.Error(), "BACKUP_CONFIG_NOT_FOUND") ||
 			strings.Contains(err.Error(), "Not Found") ||
 			strings.Contains(err.Error(), "404") {
-			return s, nil
+			return res, nil
 		}
 
-		return s, fmt.Errorf(errorSnapshotBackupPolicyRead, clusterName, err)
+		return nil, fmt.Errorf(errorSnapshotBackupPolicyRead, clusterName, err)
 	}
 
-	res = append(res, tfSnapshotBackupPolicyModel{
+	res = append(res, &tfSnapshotBackupPolicyModel{
 		ClusterID:             conversion.StringNullIfEmpty(backupPolicy.ClusterID),
 		ClusterName:           conversion.StringNullIfEmpty(backupPolicy.ClusterName),
 		NextSnapshot:          conversion.StringNullIfEmpty(backupPolicy.NextSnapshot),
@@ -1674,8 +1687,7 @@ func newTFSnapshotBackupPolicyModel(ctx context.Context, currState *tfClusterRSM
 		UpdateSnapshots:       types.BoolPointerValue(backupPolicy.UpdateSnapshots),
 		Policies:              newTFSnapshotPolicyModel(ctx, backupPolicy.Policies),
 	})
-	s, _ = types.ListValueFrom(ctx, tfSnapshotBackupPolicyType, res)
-	return s, nil
+	return res, nil
 }
 
 func newTFSnapshotPolicyModel(ctx context.Context, policies []matlas.Policy) types.List {
@@ -1707,7 +1719,7 @@ func newTFSnapshotPolicyItemModel(ctx context.Context, policyItems []matlas.Poli
 	return s
 }
 
-func newTFConnectionStringsModel(ctx context.Context, connString *matlas.ConnectionStrings) types.List {
+func newTFConnectionStringsModel(ctx context.Context, connString *matlas.ConnectionStrings) []tfConnectionStringModel {
 	res := []tfConnectionStringModel{}
 
 	if connString != nil {
@@ -1719,6 +1731,11 @@ func newTFConnectionStringsModel(ctx context.Context, connString *matlas.Connect
 			PrivateEndpoint: newTFPrivateEndpointModel(ctx, connString.PrivateEndpoint),
 		})
 	}
+	return res
+}
+
+func newTFConnectionStringsModelList(ctx context.Context, connString *matlas.ConnectionStrings) types.List {
+	res := newTFConnectionStringsModel
 	s, _ := types.ListValueFrom(ctx, tfConnectionStringType, res)
 	return s
 }
@@ -1814,7 +1831,7 @@ func newAtlasProcessArgs(tfModel *tfAdvancedConfigurationModel) *matlas.ProcessA
 	return res
 }
 
-func newAtlasTags(list []tfTagModel) []*matlas.Tag {
+func newAtlasTags(list []*tfTagModel) []*matlas.Tag {
 	res := make([]*matlas.Tag, len(list))
 	for i, v := range list {
 		res[i] = &matlas.Tag{
@@ -2115,13 +2132,13 @@ type tfClusterRSModel struct {
 	CloudBackup                               types.Bool     `tfsdk:"cloud_backup"`
 	AutoScalingDiskGBEnabled                  types.Bool     `tfsdk:"auto_scaling_disk_gb_enabled"`
 
-	Labels                []tfLabelModel             `tfsdk:"labels"`
-	Tags                  []tfTagModel               `tfsdk:"tags"`
-	ReplicationSpecs      []tfReplicationSpecModel   `tfsdk:"replication_specs"`
-	BiConnectorConfig     []tfBiConnectorConfigModel `tfsdk:"bi_connector_config"`
-	SnapshotBackupPolicy  types.List                 `tfsdk:"snapshot_backup_policy"`
-	ConnectionStrings     types.List                 `tfsdk:"connection_strings"`
-	AdvancedConfiguration types.List                 `tfsdk:"advanced_configuration"`
+	Labels                []tfLabelModel              `tfsdk:"labels"`
+	Tags                  []*tfTagModel               `tfsdk:"tags"`
+	ReplicationSpecs      []*tfReplicationSpecModel   `tfsdk:"replication_specs"`
+	BiConnectorConfig     []*tfBiConnectorConfigModel `tfsdk:"bi_connector_config"`
+	SnapshotBackupPolicy  types.List                  `tfsdk:"snapshot_backup_policy"`
+	ConnectionStrings     types.List                  `tfsdk:"connection_strings"`
+	AdvancedConfiguration types.List                  `tfsdk:"advanced_configuration"`
 
 	// AdvancedConfiguration       []tfAdvancedConfigurationModel `tfsdk:"advanced_configuration"`
 	// AdvancedConfigurationOutput types.List                     `tfsdk:"advanced_configuration_output"`

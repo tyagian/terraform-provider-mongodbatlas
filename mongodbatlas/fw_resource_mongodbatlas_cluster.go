@@ -1233,7 +1233,6 @@ func updateReplicationSpecs(clusterReq *matlas.Cluster, plan, state *tfClusterRS
 
 	if len(vRSpecs) > 0 {
 		for _, newSpec := range vRSpecs { // for each plan.replication_specs
-
 			replaceRegion := ""
 			originalRegion := ""
 			id := ""
@@ -1274,9 +1273,7 @@ func updateReplicationSpecs(clusterReq *matlas.Cluster, plan, state *tfClusterRS
 				RegionsConfig: regionsConfig,
 			}
 			rSpecs = append(rSpecs, rSpec)
-
 		}
-
 	}
 	clusterReq.ReplicationSpecs = rSpecs
 
@@ -1287,7 +1284,6 @@ func updateRegionConfigs(regions []tfRegionConfigModel, originalRegion, replaceR
 	regionsConfig := make(map[string]matlas.RegionsConfig)
 
 	for _, region := range regions { // for each plan.region_configs
-
 		r, err := valRegion(region.RegionName.ValueString()) // r = plan.region_configs[i].region_name
 		if err != nil {
 			return regionsConfig, err
@@ -1316,7 +1312,6 @@ func updateBiConnectorConfig(clusterReq *matlas.Cluster, plan, state *tfClusterR
 		biConnector, err := newAtlasBiConnectorConfig(plan)
 		if err != nil {
 			return fmt.Errorf(errorClusterCreate, err)
-
 		}
 		clusterReq.BiConnector = biConnector
 	}
@@ -1362,7 +1357,6 @@ func updateProviderSettings(cluster *matlas.Cluster, plan, state *tfClusterRSMod
 			if err != nil {
 				return fmt.Errorf(errorClusterUpdate, plan.Name.ValueString(), err)
 			}
-
 		}
 	}
 
@@ -1967,7 +1961,6 @@ func updatedAtlasRegionsConfig(regions []tfRegionConfigModel, originalRegion, re
 	regionsConfig := make(map[string]matlas.RegionsConfig)
 
 	for _, region := range regions {
-
 		r, err := valRegion(region.RegionName.ValueString())
 		if err != nil {
 			return regionsConfig, err
@@ -2091,57 +2084,53 @@ func validateClusterConfig(ctx context.Context, plan *tfClusterRSModel, response
 }
 
 type tfClusterRSModel struct {
-	DiskSizeGb                                types.Float64  `tfsdk:"disk_size_gb"`
-	ProjectID                                 types.String   `tfsdk:"project_id"`
-	SrvAddress                                types.String   `tfsdk:"srv_address"`
-	BackingProviderName                       types.String   `tfsdk:"backing_provider_name"`
-	Timeouts                                  timeouts.Value `tfsdk:"timeouts"`
-	ProviderAutoScalingComputeMinInstanceSize types.String   `tfsdk:"provider_auto_scaling_compute_min_instance_size"`
-	ClusterID                                 types.String   `tfsdk:"cluster_id"`
-	ClusterType                               types.String   `tfsdk:"cluster_type"`
-	ContainerID                               types.String   `tfsdk:"container_id"`
-	VersionReleaseSystem                      types.String   `tfsdk:"version_release_system"`
-	EncryptionAtRestProvider                  types.String   `tfsdk:"encryption_at_rest_provider"`
-	ID                                        types.String   `tfsdk:"id"`
-	MongoDBMajorVersion                       types.String   `tfsdk:"mongo_db_major_version"`
-	MongoDBMajorVersionFormatted              types.String   `tfsdk:"mongo_db_major_version_formatted"`
-	MongoDBVersion                            types.String   `tfsdk:"mongo_db_version"`
-	MongoURI                                  types.String   `tfsdk:"mongo_uri"`
-	MongoURIUpdated                           types.String   `tfsdk:"mongo_uri_updated"`
-	ProviderAutoScalingComputeMaxInstanceSize types.String   `tfsdk:"provider_auto_scaling_compute_max_instance_size"`
-	Name                                      types.String   `tfsdk:"name"`
-	StateName                                 types.String   `tfsdk:"state_name"`
-	ProviderVolumeType                        types.String   `tfsdk:"provider_volume_type"`
-	ProviderRegionName                        types.String   `tfsdk:"provider_region_name"`
-	ProviderName                              types.String   `tfsdk:"provider_name"`
-	ProviderInstanceSizeName                  types.String   `tfsdk:"provider_instance_size_name"`
-	ProviderDiskTypeName                      types.String   `tfsdk:"provider_disk_type_name"`
-	MongoURIWithOptions                       types.String   `tfsdk:"mongo_uri_with_options"`
-	ReplicationFactor                         types.Int64    `tfsdk:"replication_factor"`
-	NumShards                                 types.Int64    `tfsdk:"num_shards"`
-	ProviderDiskIops                          types.Int64    `tfsdk:"provider_disk_iops"`
-	PitEnabled                                types.Bool     `tfsdk:"pit_enabled"`
-	AutoScalingComputeScaleDownEnabled        types.Bool     `tfsdk:"auto_scaling_compute_scale_down_enabled"`
-	BackupEnabled                             types.Bool     `tfsdk:"backup_enabled"`
-	RetainBackupsEnabled                      types.Bool     `tfsdk:"retain_backups_enabled"`
-	TerminationProtectionEnabled              types.Bool     `tfsdk:"termination_protection_enabled"`
-	Paused                                    types.Bool     `tfsdk:"paused"`
-	AutoScalingComputeEnabled                 types.Bool     `tfsdk:"auto_scaling_compute_enabled"`
-	ProviderEncryptEbsVolume                  types.Bool     `tfsdk:"provider_encrypt_ebs_volume"`
-	ProviderEncryptEbsVolumeFlag              types.Bool     `tfsdk:"provider_encrypt_ebs_volume_flag"`
-	CloudBackup                               types.Bool     `tfsdk:"cloud_backup"`
-	AutoScalingDiskGBEnabled                  types.Bool     `tfsdk:"auto_scaling_disk_gb_enabled"`
-
-	Labels                []tfLabelModel              `tfsdk:"labels"`
-	Tags                  []*tfTagModel               `tfsdk:"tags"`
-	ReplicationSpecs      []*tfReplicationSpecModel   `tfsdk:"replication_specs"`
-	BiConnectorConfig     []*tfBiConnectorConfigModel `tfsdk:"bi_connector_config"`
-	SnapshotBackupPolicy  types.List                  `tfsdk:"snapshot_backup_policy"`
-	ConnectionStrings     types.List                  `tfsdk:"connection_strings"`
-	AdvancedConfiguration types.List                  `tfsdk:"advanced_configuration"`
-
-	// AdvancedConfiguration       []tfAdvancedConfigurationModel `tfsdk:"advanced_configuration"`
-	// AdvancedConfigurationOutput types.List                     `tfsdk:"advanced_configuration_output"`
+	DiskSizeGb                                types.Float64               `tfsdk:"disk_size_gb"`
+	AdvancedConfiguration                     types.List                  `tfsdk:"advanced_configuration"`
+	ConnectionStrings                         types.List                  `tfsdk:"connection_strings"`
+	SnapshotBackupPolicy                      types.List                  `tfsdk:"snapshot_backup_policy"`
+	ProviderName                              types.String                `tfsdk:"provider_name"`
+	ClusterType                               types.String                `tfsdk:"cluster_type"`
+	ClusterID                                 types.String                `tfsdk:"cluster_id"`
+	MongoURIWithOptions                       types.String                `tfsdk:"mongo_uri_with_options"`
+	ContainerID                               types.String                `tfsdk:"container_id"`
+	VersionReleaseSystem                      types.String                `tfsdk:"version_release_system"`
+	EncryptionAtRestProvider                  types.String                `tfsdk:"encryption_at_rest_provider"`
+	ID                                        types.String                `tfsdk:"id"`
+	MongoDBMajorVersion                       types.String                `tfsdk:"mongo_db_major_version"`
+	MongoDBMajorVersionFormatted              types.String                `tfsdk:"mongo_db_major_version_formatted"`
+	MongoDBVersion                            types.String                `tfsdk:"mongo_db_version"`
+	MongoURI                                  types.String                `tfsdk:"mongo_uri"`
+	MongoURIUpdated                           types.String                `tfsdk:"mongo_uri_updated"`
+	ProviderAutoScalingComputeMaxInstanceSize types.String                `tfsdk:"provider_auto_scaling_compute_max_instance_size"`
+	Name                                      types.String                `tfsdk:"name"`
+	ProjectID                                 types.String                `tfsdk:"project_id"`
+	ProviderVolumeType                        types.String                `tfsdk:"provider_volume_type"`
+	ProviderRegionName                        types.String                `tfsdk:"provider_region_name"`
+	Timeouts                                  timeouts.Value              `tfsdk:"timeouts"`
+	ProviderInstanceSizeName                  types.String                `tfsdk:"provider_instance_size_name"`
+	SrvAddress                                types.String                `tfsdk:"srv_address"`
+	ProviderAutoScalingComputeMinInstanceSize types.String                `tfsdk:"provider_auto_scaling_compute_min_instance_size"`
+	StateName                                 types.String                `tfsdk:"state_name"`
+	ProviderDiskTypeName                      types.String                `tfsdk:"provider_disk_type_name"`
+	BackingProviderName                       types.String                `tfsdk:"backing_provider_name"`
+	Labels                                    []tfLabelModel              `tfsdk:"labels"`
+	BiConnectorConfig                         []*tfBiConnectorConfigModel `tfsdk:"bi_connector_config"`
+	ReplicationSpecs                          []*tfReplicationSpecModel   `tfsdk:"replication_specs"`
+	Tags                                      []*tfTagModel               `tfsdk:"tags"`
+	ReplicationFactor                         types.Int64                 `tfsdk:"replication_factor"`
+	ProviderDiskIops                          types.Int64                 `tfsdk:"provider_disk_iops"`
+	NumShards                                 types.Int64                 `tfsdk:"num_shards"`
+	TerminationProtectionEnabled              types.Bool                  `tfsdk:"termination_protection_enabled"`
+	PitEnabled                                types.Bool                  `tfsdk:"pit_enabled"`
+	AutoScalingDiskGBEnabled                  types.Bool                  `tfsdk:"auto_scaling_disk_gb_enabled"`
+	CloudBackup                               types.Bool                  `tfsdk:"cloud_backup"`
+	Paused                                    types.Bool                  `tfsdk:"paused"`
+	RetainBackupsEnabled                      types.Bool                  `tfsdk:"retain_backups_enabled"`
+	BackupEnabled                             types.Bool                  `tfsdk:"backup_enabled"`
+	ProviderEncryptEbsVolume                  types.Bool                  `tfsdk:"provider_encrypt_ebs_volume"`
+	AutoScalingComputeScaleDownEnabled        types.Bool                  `tfsdk:"auto_scaling_compute_scale_down_enabled"`
+	AutoScalingComputeEnabled                 types.Bool                  `tfsdk:"auto_scaling_compute_enabled"`
+	ProviderEncryptEbsVolumeFlag              types.Bool                  `tfsdk:"provider_encrypt_ebs_volume_flag"`
 }
 
 type tfSnapshotBackupPolicyModel struct {
@@ -2229,8 +2218,8 @@ var tfAdvancedConfigurationType = types.ObjectType{AttrTypes: map[string]attr.Ty
 type tfReplicationSpecModel struct {
 	ID            types.String          `tfsdk:"id"`
 	ZoneName      types.String          `tfsdk:"zone_name"`
-	NumShards     types.Int64           `tfsdk:"num_shards"`
 	RegionsConfig []tfRegionConfigModel `tfsdk:"regions_config"`
+	NumShards     types.Int64           `tfsdk:"num_shards"`
 }
 
 type tfRegionConfigModel struct {

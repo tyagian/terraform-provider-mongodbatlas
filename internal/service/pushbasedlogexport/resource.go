@@ -9,8 +9,11 @@ import (
 
 	"go.mongodb.org/atlas-sdk/v20240805004/admin"
 
+	"github.com/hashicorp/terraform-plugin-framework-timeouts/resource/timeouts"
+	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
+	"github.com/hashicorp/terraform-plugin-framework/types"
 
 	"github.com/mongodb/terraform-provider-mongodbatlas/internal/common/conversion"
 	"github.com/mongodb/terraform-provider-mongodbatlas/internal/common/retrystrategy"
@@ -38,6 +41,41 @@ func Resource() resource.Resource {
 
 type pushBasedLogExportRS struct {
 	config.RSCommon
+}
+
+var _ resource.ResourceWithMoveState = &pushBasedLogExportRS{}
+
+func (r *pushBasedLogExportRS) RandomMethod(context.Context) {
+	panic("dont call me")
+}
+
+func (r *pushBasedLogExportRS) MoveState(context.Context) []resource.StateMover {
+	return []resource.StateMover{
+		{
+			StateMover: func(ctx context.Context, req resource.MoveStateRequest, resp *resource.MoveStateResponse) {
+				newState := &TFPushBasedLogExportRSModel{
+					BucketName: types.StringValue("bucket"),
+					ProjectID:  types.StringValue("123"),
+					IamRoleID:  types.StringValue("role"),
+					PrefixPath: types.StringValue("path"),
+					Timeouts: timeouts.Value{
+						Object: types.ObjectValueMust(
+							map[string]attr.Type{
+								"create": types.StringType,
+								"update": types.StringType,
+								"delete": types.StringType,
+							},
+							map[string]attr.Value{
+								"create": types.StringValue("30m"),
+								"update": types.StringValue("30m"),
+								"delete": types.StringValue("30m"),
+							}),
+					},
+				}
+				resp.Diagnostics.Append(resp.TargetState.Set(ctx, newState)...)
+			},
+		},
+	}
 }
 
 func (r *pushBasedLogExportRS) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {

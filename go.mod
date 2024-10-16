@@ -1,6 +1,6 @@
 module github.com/mongodb/terraform-provider-mongodbatlas
 
-go 1.23
+go 1.23.2
 
 require (
 	github.com/andygrunwald/go-jira/v2 v2.0.0-20240116150243-50d59fe116d6
@@ -24,7 +24,7 @@ require (
 	github.com/zclconf/go-cty v1.15.0
 	go.mongodb.org/atlas v0.37.0
 	go.mongodb.org/atlas-sdk/v20240530005 v20240530005.0.0
-	go.mongodb.org/atlas-sdk/v20240805004 v20240805004.2.0
+	go.mongodb.org/atlas-sdk/v20240805004 v20240805004.7.0
 	go.mongodb.org/realm v0.1.0
 )
 

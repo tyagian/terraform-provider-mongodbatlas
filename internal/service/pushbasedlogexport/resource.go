@@ -101,8 +101,6 @@ func (r *pushBasedLogExportRS) Create(ctx context.Context, req resource.CreateRe
 			resp.Diagnostics.AddError("Error when unconfiguring push-based log export configuration", err.Error())
 			return
 		}
-
-		resp.State.RemoveResource(ctx)
 		return
 	}
 
@@ -121,8 +119,6 @@ func (r *pushBasedLogExportRS) Create(ctx context.Context, req resource.CreateRe
 			resp.Diagnostics.AddError("Error when unconfiguring push-based log export configuration", err.Error())
 			return
 		}
-
-		resp.State.RemoveResource(ctx)
 		return
 	}
 

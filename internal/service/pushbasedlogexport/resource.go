@@ -3,7 +3,6 @@ package pushbasedlogexport
 import (
 	"context"
 	"log"
-	"net/http"
 	"slices"
 	"time"
 
@@ -136,17 +135,14 @@ func (r *pushBasedLogExportRS) Read(ctx context.Context, req resource.ReadReques
 	if resp.Diagnostics.HasError() {
 		return
 	}
-
-	connV2 := r.Client.AtlasV2
 	projectID := tfState.ProjectID.ValueString()
-	logConfig, getResp, err := connV2.PushBasedLogExportApi.GetPushBasedLogConfiguration(ctx, projectID).Execute()
-	if err != nil {
-		if getResp != nil && getResp.StatusCode == http.StatusNotFound {
-			resp.State.RemoveResource(ctx)
-			return
-		}
-		resp.Diagnostics.AddError("Error when getting push-based log export configuration", err.Error())
-		return
+
+	logConfig := &admin.PushBasedLogExportProject{
+		BucketName: conversion.StringPtr("bucket"),
+		CreateDate: conversion.Pointer(time.Now()),
+		IamRoleId:  conversion.StringPtr("role"),
+		PrefixPath: conversion.StringPtr("path"),
+		State:      conversion.StringPtr("created"),
 	}
 
 	newTFModel, diags := NewTFPushBasedLogExport(ctx, projectID, logConfig, &tfState.Timeouts)

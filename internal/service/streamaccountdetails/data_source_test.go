@@ -5,20 +5,21 @@ import (
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/mongodb/terraform-provider-mongodbatlas/internal/common/constant"
 	"github.com/mongodb/terraform-provider-mongodbatlas/internal/testutil/acc"
 )
 
 func TestAccStreamAccountDetailsDS_basic(t *testing.T) {
 	var (
-		projectID, clusterName = acc.ClusterNameExecution(t, false)
-		dataSourceName         = "data.mongodbatlas_stream_account_details.test_details"
+		projectID, _   = acc.ClusterNameExecutionWithRegion(t, constant.UsEast1, false)
+		dataSourceName = "data.mongodbatlas_stream_account_details.test_details"
 	)
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { acc.PreCheckBasic(t) },
 		ProtoV6ProviderFactories: acc.TestAccProviderV6Factories,
 		Steps: []resource.TestStep{
 			{
-				Config: StreamAccountDetailsConfig(projectID, "aws", "US_EAST_1", clusterName),
+				Config: StreamAccountDetailsConfig(projectID, "aws", "US_EAST_1"),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(dataSourceName, "project_id", projectID),
 					resource.TestCheckResourceAttrSet(dataSourceName, "aws_account_id"),
@@ -31,50 +32,13 @@ func TestAccStreamAccountDetailsDS_basic(t *testing.T) {
 	})
 }
 
-func StreamAccountDetailsConfig(projectID, cloudProvider, regionName, clusterName string) string {
-	instanceName := acc.RandomName()
-	streamInstanceConfig := acc.StreamInstanceConfig(projectID, instanceName, "VIRGINIA_USA", "AWS")
-
+func StreamAccountDetailsConfig(projectID, cloudProvider, regionName string) string {
 	return fmt.Sprintf(`
-	%[1]s
-
-	resource "mongodbatlas_stream_connection" "test_connection" {
-		    project_id 			= resource.mongodbatlas_stream_instance.test.project_id
-			instance_name 		= resource.mongodbatlas_stream_instance.test.instance_name
-		 	connection_name 	= %[2]q
-			type            	= "Cluster"
-			cluster_name    	= %[3]q
-			db_role_to_execute 	= {
-				role = "atlasAdmin"
-				type = "BUILT_IN"
-			}
-		}
-		
-		resource "mongodbatlas_stream_processor" "test_processor" {
-			project_id     	= resource.mongodbatlas_stream_instance.test.project_id
-			instance_name  	= resource.mongodbatlas_stream_instance.test.instance_name
-			processor_name 	= "testProcessor"
-			pipeline       	= jsonencode([
-				{ "$source" = { "connectionName" = resource.mongodbatlas_stream_connection.test_connection.connection_name } },
-				{ "$merge"	= {
-					"into" = {
-						"connectionName" = resource.mongodbatlas_stream_connection.test_connection.connection_name,
-						"db" = "randomDb",
-						"coll" = "randomColl"
-					}
-				} }
-			])
-			state          	= "STARTED"
-		}
 
 		data "mongodbatlas_stream_account_details" "test_details" {
-			project_id 		= resource.mongodbatlas_stream_processor.test_processor.project_id
-			cloud_provider	= %[4]q
-			region_name 	= %[5]q
-			# The getAccountDetails endpoint curerntly requires a processor in a STARTED state
-			depends_on = [
-				mongodbatlas_stream_processor.test_processor
-			]
+			project_id 		= %[1]q
+			cloud_provider	= %[2]q
+			region_name 	= %[3]q
 		}
-`, streamInstanceConfig, acc.RandomName(), clusterName, cloudProvider, regionName)
+`, projectID, cloudProvider, regionName)
 }
